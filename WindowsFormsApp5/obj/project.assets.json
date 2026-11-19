@@ -1929,11 +1929,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\2281209\\Downloads\\TrilliantPackingJEMS-main\\WindowsFormsApp5\\Trilliant.csproj",
+      "projectUniqueName": "C:\\Users\\2281209\\source\\reposJEMS\\TrilliantPackingJEMS-main - zmienna liczba\\WindowsFormsApp5\\Trilliant.csproj",
       "projectName": "WindowsFormsApp5",
-      "projectPath": "C:\\Users\\2281209\\Downloads\\TrilliantPackingJEMS-main\\WindowsFormsApp5\\Trilliant.csproj",
+      "projectPath": "C:\\Users\\2281209\\source\\reposJEMS\\TrilliantPackingJEMS-main - zmienna liczba\\WindowsFormsApp5\\Trilliant.csproj",
       "packagesPath": "C:\\Users\\2281209\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\2281209\\Downloads\\TrilliantPackingJEMS-main\\WindowsFormsApp5\\obj\\",
+      "outputPath": "C:\\Users\\2281209\\source\\reposJEMS\\TrilliantPackingJEMS-main - zmienna liczba\\WindowsFormsApp5\\obj\\",
       "projectStyle": "PackageReference",
       "skipContentFileWrite": true,
       "fallbackFolders": [
@@ -1955,6 +1955,11 @@
         "net471": {
           "projectReferences": {}
         }
+      },
+      "restoreAuditProperties": {
+        "enableAudit": "true",
+        "auditLevel": "low",
+        "auditMode": "direct"
       }
     },
     "frameworks": {
@@ -1993,5 +1998,21 @@
         "#import": []
       }
     }
-  }
+  },
+  "logs": [
+    {
+      "code": "NU1902",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'RestSharp' 110.2.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-4rr6-2v9v-wcpc",
+      "libraryId": "RestSharp",
+      "targetGraphs": [
+        ".NETFramework,Version=v4.7.1",
+        ".NETFramework,Version=v4.7.1/win",
+        ".NETFramework,Version=v4.7.1/win-arm64",
+        ".NETFramework,Version=v4.7.1/win-x64",
+        ".NETFramework,Version=v4.7.1/win-x86"
+      ]
+    }
+  ]
 }

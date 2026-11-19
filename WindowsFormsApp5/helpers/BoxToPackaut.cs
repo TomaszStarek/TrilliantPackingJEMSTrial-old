@@ -19,6 +19,7 @@ namespace WindowsFormsApp5
         public static List<string> ListOfScannedBarcodesVerified {get; private set; } = new List<string>();
 
         public static List<string> ListOfScannedBarcodesPacked{ get; private set; } = new List<string>();
+        public static List<string> ListOfScannedBarcodesFromJems { get; private set; } = new List<string>();
 
         public static List<string> ListNcsOfVerifiedProducts { get; private set; } = new List<string>();
 
@@ -27,6 +28,48 @@ namespace WindowsFormsApp5
         public static string ContainerJems { get; set; } = "0";
         public static string Nc { get; set; } = "0";
 
+        public static bool GetNumberFromJems(string sn)
+        {
+            try
+            {
+                Form1._myWindow.StopScannerCheckBoard();
+                Form1._myWindow.StopScannerForPackout();
+
+                var contents = Form1.ApiJems.ExecuteApiTestBody(ApiJems.Token, $"/api/containers/containerhierarchy/contentsByWip/external?SiteCode=KWI&WipSerialNumber={sn}&CustomerId=14", Method.Get);
+                var contentsResponse = JsonConvert.DeserializeObject<Data.contentsByWip>(contents.Item1.Content);
+
+                if (contentsResponse == null)
+                    return false;
+                BoxToPackaut.ListOfScannedBarcodesFromJems = contentsResponse.ContainerDetails.WIPSerialNumbers.Select(wip => wip.SerialNumber).ToList();
+                if (BoxToPackaut.ListOfScannedBarcodesFromJems.Count == Form1.ContainerSize)
+                    return true;
+
+                Form1._myWindow.RunScannerCheckBoard();
+                Form1._myWindow.RunScannerForPackout();
+
+            }
+            catch (Exception ex)
+            {
+
+                MessageBox.Show(new Form { TopLevel = true, TopMost = true }, ex.Message, $"Błąd przy pobieraniu numerów JEMS!!!"); ;
+            }
+
+            return false;
+        }
+
+        public static bool CheckIsBarcodeIsPacked(string barcode)
+        {
+            if (ListOfScannedBarcodesFromJems.Contains(barcode))
+            {
+                return true;
+            }
+            else
+            {
+                ProblemsToReport.WriteWarnigToList($"Sn: {barcode},  Brak w sprawdzanym kontenerze!");
+                return false;
+            }
+
+        }
 
         public static bool PackUnpackSnMultipleJEMS(List<string> list, string cointainer, string packUnpack, bool closeContainer)
         {
@@ -44,7 +87,7 @@ namespace WindowsFormsApp5
                  { $"wipsTo{packUnpack}", new JArray(list) },
                 { "executePrintTrigger", true }
             };
-                var pack = ApiJems.ExecuteApiTestBody(ApiJems.Token, "/api/Packout/WipDualPackUnpack", Method.Post, body);
+                var pack = Form1.ApiJems.ExecuteApiTestBody(ApiJems.Token, "/api/Packout/WipDualPackUnpack", Method.Post, body);
                 var packResults = JsonConvert.DeserializeObject<Data.PackUnpack.PackResponse>(pack.Item1.Content);
                 var packed = packResults.Result;
             }
@@ -57,8 +100,8 @@ namespace WindowsFormsApp5
         }
         public static bool PackUnpackSnJEMS(string sn,string cointainer, string packUnpack, bool closeCointainer, bool executePrintTrigger)
         {
-            Form1._myWindow.StopScannerCheckBoard();
-            Form1._myWindow.StopScannerForPackout();
+          //  Form1._myWindow.StopScannerCheckBoard();
+          //  Form1._myWindow.StopScannerForPackout();
             // cointainer = "JR00000032";
 
             try
@@ -74,10 +117,10 @@ namespace WindowsFormsApp5
                  { $"wipsTo{packUnpack}", new JArray($"{sn}") },
                 { "executePrintTrigger", executePrintTrigger }
             };
-                var pack = ApiJems.ExecuteApiTestBody(ApiJems.Token, "/api/Packout/WipDualPackUnpack", Method.Post, body);
+                var pack = Form1.ApiJems.ExecuteApiTestBody(ApiJems.Token, "/api/Packout/WipDualPackUnpack", Method.Post, body);
 
-                Form1._myWindow.RunScannerCheckBoard();
-                Form1._myWindow.RunScannerForPackout();
+             //   Form1._myWindow.RunScannerCheckBoard();
+             //   Form1._myWindow.RunScannerForPackout();
 
                 if (pack.Item1.ResponseStatus != RestSharp.ResponseStatus.Completed)
                     return false;
@@ -108,7 +151,7 @@ namespace WindowsFormsApp5
                                             { "resourceName", "TRILLIANT PACKOUT" }
                 };
 
-                var createCointaner = ApiJems.ExecuteApiTestBody(ApiJems.Token, "/api/containers/CreateContainerByNextNumber", Method.Post, body);// "/api/Packout/WipDualPackUnpack";
+                var createCointaner = Form1.ApiJems.ExecuteApiTestBody(ApiJems.Token, "/api/containers/CreateContainerByNextNumber", Method.Post, body);// "/api/Packout/WipDualPackUnpack";
                 var createCointanerResponse = JsonConvert.DeserializeObject<Data.CreateCointainer>(createCointaner.Item1.Content);
                 ContainerJems = createCointanerResponse.Result.ContainerName;
               //  ContainerJems = "JR00000032";
@@ -125,7 +168,7 @@ namespace WindowsFormsApp5
         {
             try
             {
-                var cointainers = ApiJems.ExecuteApiTestBody(ApiJems.Token, $"/api/containers/containerhierarchy/contentsByWip/external?SiteCode=kwi&WipSerialNumber={sn}&CustomerId=14", Method.Get);
+                var cointainers = Form1.ApiJems.ExecuteApiTestBody(ApiJems.Token, $"/api/containers/containerhierarchy/contentsByWip/external?SiteCode=kwi&WipSerialNumber={sn}&CustomerId=14", Method.Get);
                 //ContainerJems = "JR00000058";
                 //return true;
                 if (cointainers.Item1.IsSuccessful)
@@ -144,7 +187,7 @@ namespace WindowsFormsApp5
             }
             catch (Exception ex)
             {
-                MessageBox.Show(new Form { TopLevel = true, TopMost = true }, $"Błąd przy tworzeniu konteneru JEMS!!!", ex.Message);
+                MessageBox.Show(new Form { TopLevel = true, TopMost = true }, ex.Message, $"Błąd przy tworzeniu konteneru JEMS!!!");
                 return false;
             }
 
@@ -155,7 +198,7 @@ namespace WindowsFormsApp5
             //if (ContainerJems == "JR00000058")
             //    return true;
 
-            var cointainers = ApiJems.ExecuteApiTest(ApiJems.Token, $"/api/containers/containerhierarchy/contentsByWip/external?SiteCode=kwi&WipSerialNumber={sn}&CustomerId=14", Method.Get);
+            var cointainers = Form1.ApiJems.ExecuteApiTest(ApiJems.Token, $"/api/containers/containerhierarchy/contentsByWip/external?SiteCode=kwi&WipSerialNumber={sn}&CustomerId=14", Method.Get);
 
             if (cointainers.Item1.IsSuccessful)
             {
@@ -183,7 +226,7 @@ namespace WindowsFormsApp5
         {
             try
             {
-                var cointainers = ApiJems.ExecuteApiTest(ApiJems.Token, $"api/containers/GetOpenContainerByType?SiteId=10&CustomerId=14", Method.Get);
+                var cointainers = Form1.ApiJems.ExecuteApiTest(ApiJems.Token, $"api/containers/GetOpenContainerByType?SiteId=10&CustomerId=14", Method.Get);
                 var cointainersResponse = JsonConvert.DeserializeObject<List<Data.GetOpenCointainer>>(cointainers.Item1.Content);
                 
                 var firstEmptyCointainer = cointainersResponse.Where(x => x.QuantityPacked == 0 && x.ContainerTypeItem == Nc).FirstOrDefault();
@@ -212,11 +255,11 @@ namespace WindowsFormsApp5
         {
             try
             {
-                var WipId = ApiJems.ExecuteApiTestBody(ApiJems.Token, $"api/Wips/GetWipIdBySerialNumber?SiteName=Kwidzyn&CustomerName=TRILLIANT&SerialNumber={sn}", Method.Get);
+                var WipId = Form1.ApiJems.ExecuteApiTestBody(ApiJems.Token, $"api/Wips/GetWipIdBySerialNumber?SiteName=Kwidzyn&CustomerName=TRILLIANT&SerialNumber={sn}", Method.Get);
                 var WipIdResults = JsonConvert.DeserializeObject<List<Data.WipIdResults>>(WipId.Item1.Content);
                 Nc = WipIdResults.FirstOrDefault().MaterialName;
 
-                var cointainers = ApiJems.ExecuteApiTest(ApiJems.Token, $"api/containers/GetOpenContainerByType?SiteId=10&CustomerId=14", Method.Get);
+                var cointainers = Form1.ApiJems.ExecuteApiTest(ApiJems.Token, $"api/containers/GetOpenContainerByType?SiteId=10&CustomerId=14", Method.Get);
                 var cointainersResponse = JsonConvert.DeserializeObject<List<Data.GetOpenCointainer>>(cointainers.Item1.Content);
 
                 var firstEmptyCointainer = cointainersResponse.Where(x => x.QuantityPacked == 0 && x.ContainerTypeItem == Nc).FirstOrDefault();
@@ -302,7 +345,7 @@ namespace WindowsFormsApp5
 
         public static int CheckIsBarcodeDuplicatedAndAddToListIfNot(string barcodeToCheck)
         {
-            if (ListOfScannedBarcodesVerified.Count >= 300)
+            if (ListOfScannedBarcodesVerified.Count > Form1.ContainerSize && !ListOfScannedBarcodesVerified.Contains(barcodeToCheck))
                 return 2;
 
 
@@ -317,7 +360,7 @@ namespace WindowsFormsApp5
         }
         public static int CheckIsBarcodeDuplicated(string barcodeToCheck)
         {
-            if (ListOfScannedBarcodesVerified.Count >= 300)
+            if (ListOfScannedBarcodesVerified.Count >= Form1.ContainerSize)
                 return 2;
 
             if (!ListOfScannedBarcodesVerified.Contains(barcodeToCheck))
@@ -330,7 +373,7 @@ namespace WindowsFormsApp5
         public static bool IsListCountIsLessEqThan300()
         {
 
-            if (ListOfScannedBarcodesVerified.Count <= 300)
+            if (ListOfScannedBarcodesVerified.Count <= Form1.ContainerSize)
             {
                 return true;
             }
@@ -341,7 +384,7 @@ namespace WindowsFormsApp5
         public static bool IsListCountIsEqual300()
         {
 
-            if(ListOfScannedBarcodesVerified.Count == 300)
+            if(ListOfScannedBarcodesVerified.Count == Form1.ContainerSize)
             {
                 return true;
             }

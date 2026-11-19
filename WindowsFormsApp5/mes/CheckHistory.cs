@@ -31,14 +31,15 @@ namespace WindowsFormsApp5
                 return false;
             }
 
-
             return true;
         }
 
+
+
         public static bool checkSnHistoryJEMS(string sn)
         {
-            Form1._myWindow.StopScannerCheckBoard();
-            Form1._myWindow.StopScannerForPackout();
+          //  Form1._myWindow.StopScannerCheckBoard();
+          //  Form1._myWindow.StopScannerForPackout();
             var timer = API_JEMS.StartTimer();
 
 
@@ -48,17 +49,20 @@ namespace WindowsFormsApp5
                 MissingMemberHandling = MissingMemberHandling.Ignore
             };
 
-            var WipId = ApiJems.ExecuteApiTestBody(ApiJems.Token, $"api/Wips/GetWipIdBySerialNumber?SiteName=Kwidzyn&CustomerName=TRILLIANT&SerialNumber={sn}", Method.Get);
+            var WipId = Form1.ApiJems.ExecuteApiTestBody(ApiJems.Token, $"api/Wips/GetWipIdBySerialNumber?SiteName=Kwidzyn&CustomerName=TRILLIANT&SerialNumber={sn}", Method.Get);
             var WipIdResults = JsonConvert.DeserializeObject<List<Data.WipIdResults>>(WipId.Item1.Content, settings);
             var Id = WipIdResults.FirstOrDefault().WipId;
 
-     //       var okToStart = ApiJems.ExecuteApiTest(ApiJems.Token, $"/api/Wips/{Id}/oktostart?resourceName=TRILLIANT PACKOUT", Method.Get);
-     //       var operationHistories = ApiJems.ExecuteApiTest(ApiJems.Token, $"/api/Wips/{Id}/OperationHistories", Method.Get);
-     //       var attribiutes = ApiJems.ExecuteApiTest(ApiJems.Token, $"/api/Wips/attributes?SiteName=Kwidzyn&SerialNumber={sn}", Method.Get);
+            //       var okToStart = ApiJems.ExecuteApiTest(ApiJems.Token, $"/api/Wips/{Id}/oktostart?resourceName=TRILLIANT PACKOUT", Method.Get);
+            //       var operationHistories = ApiJems.ExecuteApiTest(ApiJems.Token, $"/api/Wips/{Id}/OperationHistories", Method.Get);
+            //       var attribiutes = ApiJems.ExecuteApiTest(ApiJems.Token, $"/api/Wips/attributes?SiteName=Kwidzyn&SerialNumber={sn}", Method.Get);
+            //Form1.ApiJems.ExecuteApiTest(ApiJems.Token, $"/api/Wips/{Id}/oktostart?resourceName=TRILLIANT PACKOUT", Method.Get);
+            //Form1.ApiJems.ExecuteApiTest(ApiJems.Token, $"/api/Wips/{Id}/OperationHistories", Method.Get);
+            //Form1.ApiJems.ExecuteApiTest(ApiJems.Token, $"/api/Wips/attributes?SiteName=Kwidzyn&SerialNumber={sn}", Method.Get);
 
-            var task1 = Task.Run(() => ApiJems.ExecuteApiTest(ApiJems.Token, $"/api/Wips/{Id}/oktostart?resourceName=TRILLIANT PACKOUT", Method.Get));
-            var task2 = Task.Run(() => ApiJems.ExecuteApiTest(ApiJems.Token, $"/api/Wips/{Id}/OperationHistories", Method.Get));
-            var task3 = Task.Run(() => ApiJems.ExecuteApiTest(ApiJems.Token, $"/api/Wips/attributes?SiteName=Kwidzyn&SerialNumber={sn}", Method.Get));
+            var task1 = Task.Run(() => Form1.ApiJems.ExecuteApiTest(ApiJems.Token, $"/api/Wips/{Id}/oktostart?resourceName=TRILLIANT PACKOUT", Method.Get));
+            var task2 = Task.Run(() => Form1.ApiJems.ExecuteApiTest(ApiJems.Token, $"/api/Wips/{Id}/OperationHistories", Method.Get));
+            var task3 = Task.Run(() => Form1.ApiJems.ExecuteApiTest(ApiJems.Token, $"/api/Wips/attributes?SiteName=Kwidzyn&SerialNumber={sn}", Method.Get));
 
             // Poczekaj na zakończenie wszystkich zadań
             Task.WaitAll(task1, task2, task3);
@@ -70,8 +74,8 @@ namespace WindowsFormsApp5
             var attribiutes = task3.Result;
 
 
-            Form1._myWindow.RunScannerCheckBoard();
-            Form1._myWindow.RunScannerForPackout();
+         //   Form1._myWindow.RunScannerCheckBoard();
+         //   Form1._myWindow.RunScannerForPackout();
             return true;
             BoxToPackaut.Nc = WipIdResults.FirstOrDefault().MaterialName;
 

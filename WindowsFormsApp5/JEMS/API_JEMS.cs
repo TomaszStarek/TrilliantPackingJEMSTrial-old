@@ -59,9 +59,9 @@ namespace WindowsFormsApp5
                 { "Password", password }
             };
 
-            //Send data
+            //Send data//
 
-            (RestResponse connectResponse, string apiTime) = ExecuteApiRequest("https://kwi-stg.jemsms.corp.jabil.org/api-external-api", port, resource, reqMethod, parameters: parameters);
+            (RestResponse connectResponse, string apiTime) = ExecuteApiRequest("https://kwi-prd.jemsms.corp.jabil.org/api-external-api", port, resource, reqMethod, parameters: parameters);
 
             //Read data
             string answer = connectResponse.Content;

@@ -22,6 +22,8 @@ namespace WindowsFormsApp5
 {
     public class ApiJems
     {
+        private RestClient _client;
+
         public struct Answer
         {
             public bool Status { get; set; }
@@ -35,75 +37,34 @@ namespace WindowsFormsApp5
 
         public static string Token { get; private set;}
 
+        //public ApiJems()
+        //{
+
+        //    //string server = "", username = "", password = "";
+
+        //}
 
 
-
-
-        public static Answer JEMS_WipStart(string token, string wipId, string resourceName, string connectionString)
+       public (RestResponse, string) ExecuteApiTestBody(string token, string resorce, Method method, dynamic jsonBody = null)
         {
-            string server = "", username = "", password = "";
-            server = ConfigurationManager.ConnectionStrings[connectionString].ConnectionString;
 
-            var secretSection = ConfigurationManager.GetSection("localSecrets") as NameValueCollection;
-
-            if (secretSection != null)
-            {
-                password = secretSection["Password"]?.ToString();
-                username = secretSection["Username"]?.ToString();
-            }
-
-         //   (RestResponse connectResponse, string apiTime) = ExecuteApi(server, "/api/user/signin", username, password, Method.Post, token, resourceName);
-
-
-
-            Method reqMethod = Method.Post;
-            JObject body = new JObject { { "ResourceName", resourceName } };
-
-            //Send data
-            (RestResponse connectResponse, string apiTime) = ExecuteApi(server, "/api/Wips/{wipId}/oktostart", username, password, reqMethod, token, jsonBody: body);
-
-            //Read data
-            string answer = connectResponse.Content;
-            dynamic response = JObject.Parse(answer);
-            bool status = (connectResponse.StatusCode == HttpStatusCode.OK);
-            string msg = status ? response.routeStepName.ToString() : response.errorMessage.ToString();
-            msg = msg.ClearJsonArray();
-            string apiInfo = string.Concat("WipStart ; ", apiTime, " ; ", msg);
-            return ReturnAnswer(status, answer, apiInfo);
-        }
-        public static (RestResponse, string) ExecuteApiTestBody(string token, string resorce, Method method, dynamic jsonBody = null)
-        {
             try
             {
-                //   Form1.aTimer.Enabled = false;
-                //   Form1.aTimer.Stop();
-                //    var authenticator = new JwtAuthenticator(token);
-                var options = new RestClientOptions("https://kwi-stg.jemsms.corp.jabil.org/api-external-api")
+
+                var server = ConfigurationManager.ConnectionStrings["stg"].ConnectionString;
+
+                var options = new RestClientOptions(server)
                 {
-                    //  Authenticator = authenticator
+                    //Authenticator = new HttpBasicAuthenticator(username, password)
                 };
 
+                _client = new RestClient(options);
 
-                var client = new RestClient(options);
+                Form1._myWindow.StopScannerCheckBoard();
+                Form1._myWindow.StopScannerForPackout();
 
-
-                //     var request = new RestRequest("/api/Wips/4097148/oktostart?resourceName=PLKWIM0T19CMD01", Method.Get);
                 var request = new RestRequest(resorce, method);
-                if (token != null) request.AddCookie("UserToken", token, "/", "kwi-stg.jemsms.corp.jabil.org");
-                //  request.AddStringBody("token", token);
-                //   request.AddCookie("UserToken", token, "/", "kwi-stg.jemsms.corp.jabil.org");
-                // The cancellation token comes from the caller. You can still make a call without it.
-                //JObject body = new JObject {
-                //                                { "mode", "Assigned"},
-                //                                { "customerId", 14 },
-                //                                { "containerType", "TRILLIANT BOX" },
-                //                                { "creationDate", "2024-04-18T09:00:00" },
-                //                                { "routeName", "TRILLIANT BB GEN4" },
-                //                                { "routeVersion", "1" },
-                //                                { "routeStepName", "PACKOUT" },
-                //                                { "resourceName", "TRILLIANT PACKOUT" }
-                //                          };
-                //jsonBody = body;
+                if (token != null) request.AddCookie("UserToken", token, "/", "kwi-prd.jemsms.corp.jabil.org");
 
                 if (jsonBody != null)
                 {
@@ -123,11 +84,15 @@ namespace WindowsFormsApp5
                 }
 
                 var timer = StartTimer();
-                RestResponse answer = client.Execute(request);
+                RestResponse answer = _client.Execute(request);
                 string elapsedTime = StopTimer(timer);
 
                 if (!answer.IsSuccessful)
                     MessageBox.Show(new Form { TopLevel = true, TopMost = true }, answer.Content, answer.StatusCode.ToString());
+
+                Form1._myWindow.RunScannerCheckBoard();
+                Form1._myWindow.RunScannerForPackout();
+
                 return (answer, elapsedTime);
             }
             catch (Exception ex)
@@ -139,28 +104,29 @@ namespace WindowsFormsApp5
 
         }
 
-        public static (RestResponse, string) ExecuteApi(string server, string resource, string username, string password, Method reqMethod, string token = null, dynamic jsonBody = null)
+        public (RestResponse, string) ExecuteApi(string server, string resource, string username, string password, Method reqMethod, string token = null, dynamic jsonBody = null)
         {
+            RestClientOptions options;
+
+            if (token is null)
+            {
+                options = new RestClientOptions(server)
+                {
+                    Authenticator = new HttpBasicAuthenticator(username, password)
+                };
+            }
+            else
+            {
+                options = new RestClientOptions("https://kwi-stg.jemsms.corp.jabil.org/api-external-api");
+            }
             try
             {
-                RestClientOptions options;
+               // Form1._myWindow.StopScannerCheckBoard();
+               // Form1._myWindow.StopScannerForPackout();
 
-                if (token is null)
-                {
-                    options = new RestClientOptions(server)
-                    {
-                        Authenticator = new HttpBasicAuthenticator(username, password)
-                    };
-                }
-                else
-                {
-                    options = new RestClientOptions("https://kwi-stg.jemsms.corp.jabil.org/api-external-api");
-                }
-
-
-                var client = new RestClient(options);
                 var request = new RestRequest(resource, reqMethod);
-                if (token != null) request.AddCookie("UserToken", token, "/", "kwi-stg.jemsms.corp.jabil.org");
+                var client = new RestClient(options);
+                if (token != null) request.AddCookie("UserToken", token, "/", "kwi-prd.jemsms.corp.jabil.org");
                 // The cancellation token comes from the caller. You can still make a call without it.
 
                 if (jsonBody != null)
@@ -180,11 +146,15 @@ namespace WindowsFormsApp5
 
 
                 var timer = StartTimer();
+
                 RestResponse answer = client.Execute(request);
                 string elapsedTime = StopTimer(timer);
 
                 if (!answer.IsSuccessful)
                     MessageBox.Show(new Form { TopLevel = true, TopMost = true }, answer.Content, answer.StatusCode.ToString());
+
+             //   Form1._myWindow.RunScannerCheckBoard();
+             //   Form1._myWindow.RunScannerForPackout();
 
                 return (answer, elapsedTime);
             }            
@@ -198,43 +168,25 @@ namespace WindowsFormsApp5
         }
 
 
-        public static (RestResponse, string) ExecuteApiTest(string token, string resorce, Method method)
+        public (RestResponse, string) ExecuteApiTest(string token, string resorce, Method method)
         {
             Form1._myWindow.StopScannerCheckBoard();
             Form1._myWindow.StopScannerForPackout();
-          //  Form1.aTimer.Stop();
-            //    var authenticator = new JwtAuthenticator(token);
-            var options = new RestClientOptions("https://kwi-stg.jemsms.corp.jabil.org/api-external-api")
-                {
-                  //  Authenticator = authenticator
-                };
-            
 
-            var client = new RestClient(options);
+            var options = new RestClientOptions("https://kwi-prd.jemsms.corp.jabil.org/api-external-api")
+            {
+                //  Authenticator = authenticator
+            };
 
 
-            //     var request = new RestRequest("/api/Wips/4097148/oktostart?resourceName=PLKWIM0T19CMD01", Method.Get);
+              var client = new RestClient(options);
+
+
             var request = new RestRequest(resorce, method);
 
             //  request.AddStringBody("token", token);
-            request.AddCookie("UserToken", token, "/", "kwi-stg.jemsms.corp.jabil.org");
+            request.AddCookie("UserToken", token, "/", "kwi-prd.jemsms.corp.jabil.org");
             // The cancellation token comes from the caller. You can still make a call without it.
-
-            //if (jsonBody != null)
-            //{
-            //    string jsonMess;
-            //    switch (jsonBody)
-            //    {
-            //        case object a when a.GetType() == typeof(JObject):
-            //            jsonMess = ((JObject)jsonBody).ToString(); break;
-            //        case object a when a.GetType() == typeof(string):
-            //            jsonMess = jsonBody; break;
-            //        default: jsonMess = JsonConvert.SerializeObject(jsonBody); break;
-            //    }
-            //    request.AddStringBody(jsonMess, DataFormat.Json);
-            //    //request.AddParameter("application/json", jsonMess, ParameterType.RequestBody);
-            //}
-      //      client.AddCookie("UserToken", token, "/", "https://kwi-stg.jemsms.corp.jabil.org/api-external-api");
 
             var timer = StartTimer();
             RestResponse answer = client.Execute(request);
@@ -265,11 +217,12 @@ namespace WindowsFormsApp5
                 username = secretSection["Username"]?.ToString();
             }
 
-            //server = "http://AWECN1WEB85/api-external-api";
-            //username = "SVCKWI_JEMSMSAPIPRD";
-            //password = "a)hcul3f!@~@nK5KdZcV5TGzI";
+            server = "https://kwi-prd.jemsms.corp.jabil.org/api-external-api";
 
-            (RestResponse response, string apiTime) = ExecuteApi(server , "/api/user/signin", username, password, Method.Get);
+            username = "SVCKWI_JEMSMSAPIPRD";
+            password = "a)hcul3f!@~@nK5KdZcV5TGzI";
+
+            (RestResponse response, string apiTime) = ExecuteApi(server , "/api/user/adsignin", username, password, Method.Get);
 
             string answer = response.Content;
             bool status = false;

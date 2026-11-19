@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\2281209\\Downloads\\TrilliantPackingJEMS-main\\WindowsFormsApp5\\Trilliant.csproj": {}
+    "C:\\Users\\2281209\\source\\reposJEMS\\TrilliantPackingJEMS-main - zmienna liczba\\WindowsFormsApp5\\Trilliant.csproj": {}
   },
   "projects": {
-    "C:\\Users\\2281209\\Downloads\\TrilliantPackingJEMS-main\\WindowsFormsApp5\\Trilliant.csproj": {
+    "C:\\Users\\2281209\\source\\reposJEMS\\TrilliantPackingJEMS-main - zmienna liczba\\WindowsFormsApp5\\Trilliant.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\2281209\\Downloads\\TrilliantPackingJEMS-main\\WindowsFormsApp5\\Trilliant.csproj",
+        "projectUniqueName": "C:\\Users\\2281209\\source\\reposJEMS\\TrilliantPackingJEMS-main - zmienna liczba\\WindowsFormsApp5\\Trilliant.csproj",
         "projectName": "WindowsFormsApp5",
-        "projectPath": "C:\\Users\\2281209\\Downloads\\TrilliantPackingJEMS-main\\WindowsFormsApp5\\Trilliant.csproj",
+        "projectPath": "C:\\Users\\2281209\\source\\reposJEMS\\TrilliantPackingJEMS-main - zmienna liczba\\WindowsFormsApp5\\Trilliant.csproj",
         "packagesPath": "C:\\Users\\2281209\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\2281209\\Downloads\\TrilliantPackingJEMS-main\\WindowsFormsApp5\\obj\\",
+        "outputPath": "C:\\Users\\2281209\\source\\reposJEMS\\TrilliantPackingJEMS-main - zmienna liczba\\WindowsFormsApp5\\obj\\",
         "projectStyle": "PackageReference",
         "skipContentFileWrite": true,
         "fallbackFolders": [
@@ -33,6 +33,11 @@
           "net471": {
             "projectReferences": {}
           }
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
         }
       },
       "frameworks": {

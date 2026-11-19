@@ -80,7 +80,7 @@ namespace WindowsFormsApp5
                     }
 
 
-                    if (counterOfPiecesFromMachine - _counterPiecesInBox != 2 && counterOfPiecesFromMachine != 300)
+                    if (counterOfPiecesFromMachine - _counterPiecesInBox != 2 && counterOfPiecesFromMachine != Form1.ContainerSize)
                     {
                         //DialogResult d = MessageBox.Show(new Form { TopLevel = true, TopMost = true },
                         //         $" Zeskanowano płytkę o numerze: {_lineReadIn}\n\n" +
@@ -101,7 +101,7 @@ namespace WindowsFormsApp5
                     {
                         if(BoxToPackaut.ListOfScannedBarcodesVerified.Count == 0)
                         {
-                            Form1._myWindow.StopScannerCheckBoard();
+                          //  Form1._myWindow.StopScannerCheckBoard();
                             //  Form1.aTimer.Enabled = false;
                             var kuk = new ApiJems();
 
@@ -115,16 +115,14 @@ namespace WindowsFormsApp5
                                 _poprzedniBarcode = "";
                                 return "";
                             }
-
-                            BoxToPackaut.GetOpenCointainer(_lineReadIn);
-
-                            if (BoxToPackaut.ContainerJems.Length < 5)
+                            if(!BoxToPackaut.GetNumberFromJems(_lineReadIn))
                             {
-                                MessageBox.Show(new Form { TopLevel = true, TopMost = true }, "Aplikacja nie pobrała numeru kontera!!!", "Błąd kontenera");
-                                Form1._myWindow.RunScannerCheckBoard();
-                                _poprzedniBarcode = "";
+                                ChangeControl.UpdateControl(labelStatusInfo, Color.Red, $"Nie pobrano odpowiedniej liczby numerów z JEMS: {BoxToPackaut.ListOfScannedBarcodesFromJems.Count.ToString()}\n Sprawdź zeskanowany numer: {_lineReadIn}!", true);
+                                ProblemsToReport.WriteToListProblem($"Nie pobrano odpowiedniej liczby numerów z JEMS: {BoxToPackaut.ListOfScannedBarcodesFromJems.Count.ToString()}! Zeskanowany numer{_lineReadIn}!");
                                 return "";
                             }
+
+
                             Form1._myWindow.RunScannerCheckBoard();
                             //   Form1.aTimer.Enabled = true;
                             //if (BoxToPackaut.CheckPeelTest() != 0)
@@ -142,10 +140,10 @@ namespace WindowsFormsApp5
 
                         if ((BoxToPackaut.ListOfScannedBarcodesPacked.Count == 0 && BoxToPackaut.ListOfScannedBarcodesVerified.Count < 5) ||
                             (Form1.ScanOkScannerPackout && BoxToPackaut.ListOfScannedBarcodesVerified.Except(BoxToPackaut.ListOfScannedBarcodesPacked).Count() < 6) 
-                            || BoxToPackaut.ListOfScannedBarcodesVerified.Count >= 300)
+                            || BoxToPackaut.ListOfScannedBarcodesVerified.Count >= Form1.ContainerSize)
                         {
 
-                            if (CheckHistory.checkSnHistoryJEMS(_lineReadIn))           //CheckHistory.checkSnHistoryJEMS(_lineReadIn))
+                            if (BoxToPackaut.CheckIsBarcodeIsPacked(_lineReadIn))           //CheckHistory.checkSnHistoryJEMS(_lineReadIn))
                             {
                                 
                                 var resultOfBarcode = BoxToPackaut.CheckIsBarcodeDuplicatedAndAddToListIfNot(_lineReadIn);
@@ -260,7 +258,7 @@ namespace WindowsFormsApp5
                             ChangeControl.UpdateControl(labelStatusInfo, Color.Orange, $"Wystąpił błąd historii produktu!\n2.Zeskanuj skanerem ręcznym nową płytkę-> OK barkod:{Form1.ManualBarcodeAfterBlock}!\n3.Odłóż ją na miejsce odczytu skanera automatycznego!", true);
                         }
                         else
-                            ChangeControl.UpdateControl(labelStatusInfo, Color.Red, $"Wystąpił błąd historii produktu! \n1.Sprawdź wyskakujące komunikaty!\n2.Zeskanuj skanerem ręcznym nową płytkę!\n3.Odłóż ją na miejsce odczytu skanera automatycznego!", true);
+                            ChangeControl.UpdateControl(labelStatusInfo, Color.Red, $"Wystąpił błąd historii produktu! \n1.Sprawdź wyskakujące komunikaty!\n2.Zeskanuj skanerem ręcznym nową, dobrą płytkę!\n3.Odłóż ją na miejsce odczytu skanera automatycznego!", true);
                         if (Form1.ManualBarcodeAfterBlock.Equals(_lineReadIn))
                         {
                             Form1.ScanerBlocked = false;

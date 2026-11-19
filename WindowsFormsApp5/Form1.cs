@@ -20,7 +20,6 @@ using Newtonsoft.Json;
 using static WindowsFormsApp5.mes.WebApi;
 using WindowsFormsApp5.Data;
 using System.Security.Policy;
-
 namespace WindowsFormsApp5
 {
     
@@ -50,8 +49,8 @@ namespace WindowsFormsApp5
         public static Form1 _myWindow;
 
         #endregion
-
-
+        public static int ContainerSize = 300;
+        public static ApiJems ApiJems { get; private set; }
         public static bool MoreThan300piecesScanned { get; set; } = false;
         public static bool ScanOkScannerPackout { get; set; } = false;
 
@@ -113,30 +112,35 @@ namespace WindowsFormsApp5
             Application.ApplicationExit += new EventHandler(OnApplicationExit);
             _myWindow = this;
 
-            scannerForPackout = new ScannerForPackout("COM10", textBox3, labelScanOut2,labelCountPackedPieces,labelScanInfoPAK, labelStatusInfo, buttonIfMesDoneThenPlcDone, BtnErrorOccursAccept);
-//4 i 7
-           scannerForCheckBoards = new ScannerForCheckBoards("COM11", textBox1, labelScanOut,
-                        labelCountVerifiedPiecesToBox, labelStatusInfo, buttonWygenerujBarcode, BtnErrorOccursAccept);
+            ChangeControl.UpdateControl(label300_2, $"/ {ContainerSize.ToString()}", true);
+            ChangeControl.UpdateControl(label300, $"/ {ContainerSize.ToString()}", true);
 
-            StopScannerCheckBoard();
-            StopScannerForPackout();
+            scannerForPackout = new ScannerForPackout("COM7", textBox3, labelScanOut2, labelCountPackedPieces, labelScanInfoPAK, labelStatusInfo, buttonIfMesDoneThenPlcDone, BtnErrorOccursAccept, labelBox);
+            //4 i 7
+            scannerForCheckBoards = new ScannerForCheckBoards("COM4", textBox1, labelScanOut,
+                         labelCountVerifiedPiecesToBox, labelStatusInfo, buttonWygenerujBarcode, BtnErrorOccursAccept);
+              StopScannerCheckBoard();
+              StopScannerForPackout();
 
-            var k = new ApiJems();
-            var a = k.GetTokenSync("stg");
+            ApiJems = new ApiJems();
+            ApiJems.GetTokenSync("stg");
 
             if (File.Exists(@"parametry.txt"))
             {
                 _counterPiecesInBox = BoxToPackaut.Read_param();
+
+                if (_counterPiecesInBox > 0)
+                {
+                    BoxToPackaut.GetContainerNumber(BoxToPackaut.ListOfScannedBarcodesVerified.FirstOrDefault());
+                    BoxToPackaut.GetNumberFromJems(BoxToPackaut.ListOfScannedBarcodesVerified.FirstOrDefault());
+                }
+                if(BoxToPackaut.ContainerJems.Length > 2)
+                    ChangeControl.UpdateControl(labelBox, BoxToPackaut.ContainerJems, true);
                 ChangeControl.UpdateControl(labelCountVerifiedPiecesToBox, _counterPiecesInBox.ToString(), true);
             }
             if (File.Exists(@"packedbarcodes.txt"))
             {
                 _counterPiecesInBox = BoxToPackaut.ReadPackoutSn();
-
-                if(_counterPiecesInBox > 0)
-                {
-                    BoxToPackaut.GetContainerNumber(BoxToPackaut.ListOfScannedBarcodesVerified[0]);
-                }
 
                 ChangeControl.UpdateControl(labelCountPackedPieces, _counterPiecesInBox.ToString(), true);
             }
@@ -165,9 +169,10 @@ namespace WindowsFormsApp5
                     MessageBox.Show(new Form { TopLevel = true, TopMost = true }, ex.ToString(), "Błąd połączenia z PLC!");
                 }
             }
-        //    SetTimer();
 
-   //             aTimer.Start();
+            //    SetTimer();
+
+            //             aTimer.Start();
             //  PLC.InitEvent();
             if (scannerForCheckBoards.Port.IsOpen)
             {
@@ -324,7 +329,7 @@ namespace WindowsFormsApp5
 
                 ChangeControl.UpdateControl(labelScanInfoPAK, Color.HotPink, "Wyzerowano wszystkie dane!", true);
                 ChangeControl.UpdateControl(labelCountPackedPieces, Color.DeepPink, "0", true);
-
+                ChangeControl.UpdateControl(labelBox, "", false);
                 ProblemsToReport.ClearAllErr();
                 ProblemsToReport.ClearAllWarn();
 
@@ -551,7 +556,7 @@ namespace WindowsFormsApp5
 
         private void button6_Click_2(object sender, EventArgs e)
         {
-            if (_counterPiecesInBox == 300 || _counterPiecesInBox == 0)
+            if (_counterPiecesInBox == Form1.ContainerSize || _counterPiecesInBox == 0)
             {
                 PLC.WriteBool("PROGRAM:MainProgram.Mes_App_Box_Done");
                 ProblemsToReport.WriteToListProblem("Wciśnięto przycisk końca partii");
@@ -612,18 +617,47 @@ namespace WindowsFormsApp5
         private async void button8_Click(object sender, EventArgs e)
         {
             //var K = BoxToPackaut.CheckPeelTest();
-            
+
             var kuk = new ApiJems();
-            
+
             var a = kuk.GetTokenSync("stg");
 
             var tt = ApiJems.Token;
 
-            var cointainers2 = ApiJems.ExecuteApiTestBody(ApiJems.Token, $"/api/containers/containerhierarchy/contentsByWip/external?SiteCode=kwi&WipSerialNumber={"NEQA6481051"}&CustomerId=14", Method.Get);
-            var cointainers = ApiJems.ExecuteApiTestBody(ApiJems.Token, $"api/containers/GetOpenContainerByType?SiteId=10&CustomerId=14", Method.Get);
+
+
+            BoxToPackaut.GetNumberFromJems("NEQA6514326");
+
+
+            //    var kupa = ApiJems.ExecuteApiTest(ApiJems.Token, "/api/Wips/getWipProcessedByRouteStep?SiteCode=kwi&RouteStep=PACKOUT&StartDateTime=2024-06-17T14%3A23%3A20&EndDateTime=2024-06-17T15%3A23%3A20", Method.Get);
+            var hui = 2 + 2;
+        //    var res = JsonConvert.DeserializeObject<Data.GetWipProcessedByRouteStepResult.Processed>(kupa.Item1.Content);
+            var esad = 2;
+            CheckHistory.checkSnHistoryJEMS("NEQA6515776");
+
+            JObject body = new JObject {
+                            { "closeContainer", true },
+                            { "containerName", "JR00000055" },
+                            { "resourceName", "TRILLIANT PACKOUT" },
+                            { "routeName", "TRILLIANT BB GEN4" },
+                            { "routeStepName", "PACKOUT" },
+                            { "routeVersion", "1" },
+                             { "wipsToPack", new JArray("NEQA6515776") },
+                            { "executePrintTrigger", true }
+                        };
+            var pack = ApiJems.ExecuteApiTestBody(ApiJems.Token, "/api/Packout/WipDualPackUnpack", Method.Post, body);
+
+
+            //           var cointainers2 = ApiJems.ExecuteApiTestBody(ApiJems.Token, $"/api/containers/containerhierarchy/contentsByWip/external?SiteCode=kwi&WipSerialNumber={"NEQA6481051"}&CustomerId=14", Method.Get);
+            //           var cointainers = ApiJems.ExecuteApiTestBody(ApiJems.Token, $"api/containers/GetOpenContainerByType?SiteId=10&CustomerId=14", Method.Get);
+
+
+
+
+
             //       BoxToPackaut.GetOpenCointainer();
-       //     BoxToPackaut.GetContainerNumber("NEQA8660011");
-         //   BoxToPackaut.PackUnpackSnJEMS("NEQA8660011", "JR00000055", "Pack", false);
+            //     BoxToPackaut.GetContainerNumber("NEQA8660011");
+            //   BoxToPackaut.PackUnpackSnJEMS("NEQA8660011", "JR00000055", "Pack", false);
 
             //   var task1 = Task.Run(() => WebApi.CallApiWithCookie());
 
@@ -868,9 +902,9 @@ namespace WindowsFormsApp5
 
                 if(barcodeManual.Length == 11)
                 {
-                    if(CheckHistory.checkSnHistory(barcodeManual))
+                    if(BoxToPackaut.CheckIsBarcodeIsPacked(barcodeManual))
                     {
-                        if(BoxToPackaut.CheckIsBarcodeDuplicated(barcodeManual) == 0)
+                        if(BoxToPackaut.CheckIsBarcodeIsPacked(barcodeManual))
                         {
                             ManualBarcodeAfterBlock = barcodeManual;
                             fail = false;
@@ -889,6 +923,32 @@ namespace WindowsFormsApp5
         private void button9_Click(object sender, EventArgs e)
         {
             FinishBoxWithoutGenerateBarcodes();
+        }
+
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void textBox4_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void textBox4_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                bool success = int.TryParse(textBox4.Text, out ContainerSize);
+                if (success)
+                {
+                    ChangeControl.UpdateControl(label300_2, $"/ {ContainerSize.ToString()}", true);
+                    ChangeControl.UpdateControl(label300, $"/ {ContainerSize.ToString()}", true);
+                }
+                else
+                    MessageBox.Show("Błąd parsowania, Podawaj numery!!!11oneoneone");
+                textBox4.Text = String.Empty;
+            }
         }
 
         public void OnApplicationExit(object sender, EventArgs e)
